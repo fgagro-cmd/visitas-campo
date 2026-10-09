@@ -3,7 +3,7 @@
   "short_name": "Visitas",
   "description": "Registro de visitas a fincas con plagas, seguimientos y fotos.",
   "lang": "es",
-  "id": "./",
+  "id": "/visitas-campo/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
