@@ -390,7 +390,7 @@
   // ------------------------------------------------------------ formulario de visita
 
   function nuevoBorrador() {
-    return { fecha: hoyTexto(), finca: '', cliente: '', fincaCargada: null, cultivosFinca: [], visitado: {}, sel: {},
+    return { fecha: hoyTexto(), finca: '', cliente: '', clienteNuevo: false, fincaNueva: false, fincaCargada: null, cultivosFinca: [], visitado: {}, sel: {},
       observaciones: '', accion: '', seguimiento: '', fotos: [] };
   }
   function asegurarSel(b) {
@@ -404,6 +404,8 @@
     if (!f) return;
     b.finca = f.nombre;
     b.fincaCargada = f.nombre;
+    b.fincaNueva = false;
+    b.clienteNuevo = false;
     b.cliente = f.cliente || '';
     b.cultivosFinca = (f.cultivos || []).slice();
     b.visitado = {};
@@ -443,16 +445,15 @@
       '<h2>Nueva visita</h2>' +
       (b.restaurado ? '<div class="v-banner"><span>Has recuperado una visita sin terminar.</span><button class="btn-mini" id="vf-descartar" type="button">Descartar</button></div>' : '') +
       '<label class="first">Fecha</label><input type="date" id="vf-fecha" value="' + esc(b.fecha) + '">' +
-      '<label>Finca</label><input type="text" id="vf-finca" autocomplete="off" placeholder="Escribe o elige una finca" value="' + esc(b.finca) + '">' +
-      '<div class="chips sugs" id="vf-sug-finca"></div>' +
+      '<label>Cliente</label><select id="vf-cliente-sel"></select>' +
+      '<input type="text" id="vf-cliente" autocomplete="off" placeholder="Nombre del cliente nuevo" value="' + esc(b.cliente) + '" hidden>' +
+      '<label>Finca</label><select id="vf-finca-sel"></select>' +
+      '<input type="text" id="vf-finca" autocomplete="off" placeholder="Nombre de la finca nueva" value="' + esc(b.finca) + '" hidden>' +
       '<p class="hint" id="vf-info"></p>' +
-      '<details id="vf-det-finca"' + (b.fincaCargada ? '' : ' open') + '><summary style="cursor:pointer;font-size:0.85rem;font-weight:600;color:var(--clr-primary);">Cliente y cultivos de esta finca</summary>' +
-      '<label>Cliente</label><input type="text" id="vf-cliente" autocomplete="off" placeholder="Escribe o elige un cliente" value="' + esc(b.cliente) + '">' +
-      '<div class="chips sugs" id="vf-sug-cliente"></div>' +
-      '<label>Cultivos de la finca</label><div class="chips" id="vf-cultivos-finca"></div></details>' +
+      '<div id="vf-cultivos-wrap"></div>' +
       '<div id="vf-bloques"></div>' +
       '<label style="margin-top:20px;">Observaciones generales</label><textarea id="vf-obs" placeholder="Lo que has visto en la finca">' + esc(b.observaciones) + '</textarea>' +
-      '<label>Acción pendiente</label><input type="text" id="vf-accion" placeholder="Ej. Volver a mirar el riego del sector 2" value="' + esc(b.accion) + '">' +
+      '<label>Acción pendiente</label><input type="text" id="vf-accion" autocomplete="off" placeholder="Ej. Volver a mirar el riego del sector 2" value="' + esc(b.accion) + '">' +
       '<label>Fecha de seguimiento</label><input type="date" id="vf-seg" value="' + esc(b.seguimiento) + '">' +
       '<div class="seg-rapido"><button class="btn-mini" type="button" data-sumar="7">+7 días</button><button class="btn-mini" type="button" data-sumar="15">+15 días</button><button class="btn-mini" type="button" data-sumar="30">+30 días</button></div>' +
       '<label>Fotos</label><input type="file" id="vf-fotos" accept="image/*" multiple><div class="fotos" id="vf-fotos-prev"></div>' +
@@ -460,23 +461,29 @@
       '<p class="hint" id="vf-msg"></p></div></div>';
 
     $('vf-fecha').addEventListener('change', function (e) { form.fecha = e.target.value; guardarBorrador(); });
-    $('vf-finca').addEventListener('input', alEscribirFinca);
-    $('vf-cliente').addEventListener('input', function (e) { form.cliente = e.target.value; guardarBorrador(); pintarSugerencias(); });
-    $('vf-sug-finca').addEventListener('click', function (e) {
-      var bt = e.target.closest('[data-sug-finca]');
-      if (!bt) return;
-      var inp = $('vf-finca');
-      inp.value = bt.getAttribute('data-sug-finca');
-      alEscribirFinca({ target: inp });
-    });
-    $('vf-sug-cliente').addEventListener('click', function (e) {
-      var bt = e.target.closest('[data-sug-cliente]');
-      if (!bt) return;
-      form.cliente = bt.getAttribute('data-sug-cliente');
+    $('vf-cliente-sel').addEventListener('change', function (e) {
+      var v = e.target.value;
+      var anterior = (form.cliente || '').trim();
+      if (v === '__nuevo__') { form.clienteNuevo = true; form.cliente = ''; soltarFinca(); }
+      else if (v === '') { form.clienteNuevo = false; form.cliente = ''; soltarFinca(); }
+      else { form.clienteNuevo = false; if (!igual(anterior, v)) soltarFinca(); form.cliente = v; }
       $('vf-cliente').value = form.cliente;
+      $('vf-finca').value = form.finca;
+      repintarFincaYCultivos();
       guardarBorrador();
-      pintarSugerencias();
     });
+    $('vf-cliente').addEventListener('input', function (e) { form.cliente = e.target.value; pintarInfoFinca(); guardarBorrador(); });
+    $('vf-finca-sel').addEventListener('change', function (e) {
+      var v = e.target.value;
+      if (v === '__nuevo__') { soltarFinca(); form.fincaNueva = true; }
+      else if (v === '') { soltarFinca(); }
+      else { cargarFincaEnBorrador(form, v); }
+      $('vf-finca').value = form.finca;
+      $('vf-cliente').value = form.cliente;
+      repintarFincaYCultivos();
+      guardarBorrador();
+    });
+    $('vf-finca').addEventListener('input', alEscribirFinca);
     $('vf-obs').addEventListener('input', function (e) { form.observaciones = e.target.value; guardarBorrador(); });
     $('vf-accion').addEventListener('input', function (e) { form.accion = e.target.value; guardarBorrador(); });
     $('vf-seg').addEventListener('change', function (e) { form.seguimiento = e.target.value; guardarBorrador(); });
@@ -504,95 +511,125 @@
       if (e.key === 'Enter' && e.target.classList.contains('vf-np-input')) { e.preventDefault(); e.target.parentNode.querySelector('button').click(); }
     });
 
+    pintarSelectores();
     pintarInfoFinca();
-    pintarSugerencias();
     pintarCultivosFinca();
     pintarBloques();
     pintarFotos();
   }
 
-  function sinAcentos(t) {
-    return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  function clienteExiste(c) {
+    return !!(c || '').trim() && fincas.some(function (f) { return igual(f.cliente, c); });
   }
-  // Muestra las fincas y clientes que ya existen como botones, filtrados por lo que se va escribiendo.
-  function pintarSugerencias() {
-    var cf = $('vf-sug-finca'), cc = $('vf-sug-cliente');
-    if (!cf || !cc) return;
-    var q = sinAcentos(form.finca);
-    var lista = fincas.slice().sort(function (a, b) { return a.nombre.localeCompare(b.nombre, 'es'); })
-      .filter(function (f) { return !q || sinAcentos(f.nombre).indexOf(q) !== -1; })
-      .filter(function (f) { return !(form.fincaCargada && igual(f.nombre, form.fincaCargada)); });
-    cf.innerHTML = lista.slice(0, 12).map(function (f) {
-      return '<button type="button" class="chip" data-sug-finca="' + esc(f.nombre) + '">' + esc(f.nombre) + '</button>';
-    }).join('');
-    var qc = sinAcentos(form.cliente);
-    var clis = unicos(fincas.map(function (f) { return f.cliente; }).filter(Boolean)).sort(function (a, b) { return a.localeCompare(b, 'es'); })
-      .filter(function (c) { return !qc || sinAcentos(c).indexOf(qc) !== -1; })
-      .filter(function (c) { return !igual(c, form.cliente); });
-    cc.innerHTML = clis.slice(0, 12).map(function (c) {
-      return '<button type="button" class="chip" data-sug-cliente="' + esc(c) + '">' + esc(c) + '</button>';
-    }).join('');
+  function clienteEsNuevo() {
+    return !!form.clienteNuevo || (!!(form.cliente || '').trim() && !clienteExiste(form.cliente));
+  }
+  function fincaEsNueva() {
+    if (form.fincaCargada) return false;
+    return clienteEsNuevo() || !!form.fincaNueva || !!(form.finca || '').trim();
+  }
+  function soltarFinca() {
+    form.finca = ''; form.fincaCargada = null; form.fincaNueva = false;
+    form.cultivosFinca = []; form.visitado = {}; form.sel = {};
+  }
+  function repintarFincaYCultivos() {
+    pintarSelectores();
+    pintarInfoFinca();
+    pintarCultivosFinca();
+    pintarBloques();
+  }
+
+  // Cliente y finca van en desplegables encadenados: la lista de fincas solo contiene las del cliente elegido.
+  function pintarSelectores() {
+    var sc = $('vf-cliente-sel'), sf = $('vf-finca-sel');
+    if (!sc || !sf) return;
+    var nuevoC = clienteEsNuevo(), nuevoF = fincaEsNueva();
+    var cli = (form.cliente || '').trim();
+    var clientes = unicos(fincas.map(function (f) { return f.cliente; }).filter(Boolean)).sort(function (a, b) { return a.localeCompare(b, 'es'); });
+    sc.innerHTML = '<option value="">Elige un cliente…</option>' +
+      clientes.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
+      '<option value="__nuevo__">+ Cliente nuevo…</option>';
+    sc.value = nuevoC ? '__nuevo__' : (cli ? (clientes.filter(function (c) { return igual(c, cli); })[0] || '') : '');
+
+    var delCliente = (cli && !nuevoC) ? fincas.filter(function (f) { return igual(f.cliente, cli); }) : [];
+    if (form.fincaCargada && !delCliente.some(function (f) { return igual(f.nombre, form.fincaCargada); })) {
+      var c0 = buscarFinca(form.fincaCargada); if (c0) delCliente.push(c0);
+    }
+    delCliente.sort(function (a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+    var hayCliente = nuevoC || !!cli || !!form.fincaCargada;
+    sf.innerHTML = '<option value="">' + (hayCliente ? 'Elige una finca…' : 'Primero elige el cliente') + '</option>' +
+      delCliente.map(function (f) { return '<option value="' + esc(f.nombre) + '">' + esc(f.nombre) + '</option>'; }).join('') +
+      (hayCliente ? '<option value="__nuevo__">+ Finca nueva…</option>' : '');
+    sf.disabled = !hayCliente;
+    sf.value = form.fincaCargada ? form.fincaCargada : (nuevoF && hayCliente ? '__nuevo__' : '');
+    $('vf-cliente').hidden = !nuevoC;
+    $('vf-finca').hidden = !nuevoF;
   }
 
   function pintarInfoFinca() {
     var info = $('vf-info');
     if (!info) return;
     var f = form.fincaCargada ? buscarFinca(form.fincaCargada) : null;
+    var cli = (form.cliente || '').trim();
     if (f) {
       var e = estadoFinca(f);
       info.textContent = 'Finca existente. Última visita: ' + (f.ultimaVisita ? formatoFecha(f.ultimaVisita) + ' (' + e.texto + ')' : 'ninguna') + '.';
-    } else if ((form.finca || '').trim()) {
-      info.textContent = 'Finca nueva: se creará al guardar. Indica su cliente y sus cultivos.';
+    } else if (fincaEsNueva()) {
+      info.textContent = 'Finca nueva: se creará al guardar. Añade sus cultivos.';
+    } else if (!cli && !clienteEsNuevo()) {
+      info.textContent = 'Empieza eligiendo el cliente.';
     } else {
-      info.textContent = '';
+      info.textContent = 'Elige una de sus fincas o crea una nueva.';
     }
   }
 
   function alEscribirFinca(e) {
     form.finca = e.target.value;
     var f = buscarFinca(form.finca);
-    var det = $('vf-det-finca');
-    if (f) {
-      if (form.fincaCargada !== f.nombre) {
-        cargarFincaEnBorrador(form, f.nombre);
-        e.target.value = form.finca;
-        $('vf-cliente').value = form.cliente;
-        pintarCultivosFinca();
-        pintarBloques();
-        det.open = !form.cultivosFinca.length;
-      }
-    } else if (form.fincaCargada) {
-      form.fincaCargada = null;
-      det.open = true;
-    } else if ((form.finca || '').trim()) {
-      det.open = true;
+    if (f && !form.fincaCargada) {
+      // Ya existía con ese nombre: se carga con su cliente y sus cultivos en vez de duplicarla.
+      cargarFincaEnBorrador(form, f.nombre);
+      $('vf-finca').value = form.finca;
+      $('vf-cliente').value = form.cliente;
+      repintarFincaYCultivos();
+    } else {
+      pintarInfoFinca();
     }
-    pintarInfoFinca();
-    pintarSugerencias();
     guardarBorrador();
   }
 
   function pintarCultivosFinca() {
-    var cont = $('vf-cultivos-finca');
+    var cont = $('vf-cultivos-wrap');
     if (!cont) return;
-    var todos = unicos(cultivos.concat(form.cultivosFinca));
-    cont.innerHTML = todos.map(function (c) {
-      var on = form.cultivosFinca.some(function (x) { return igual(x, c); });
-      return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-cf="' + esc(c) + '">' + esc(c) + '</button>';
+    if (!(form.fincaCargada || fincaEsNueva())) { cont.innerHTML = ''; return; }
+    var elegidos = form.cultivosFinca.map(function (c) {
+      return '<button type="button" class="chip on" data-cf-quitar="' + esc(c) + '" title="Quitar de la finca">' + esc(c) + ' ×</button>';
     }).join('');
-    var chips = cont.querySelectorAll('[data-cf]');
-    for (var i = 0; i < chips.length; i++) {
-      chips[i].addEventListener('click', function (e) {
-        var c = e.currentTarget.getAttribute('data-cf');
-        var idx = -1;
-        form.cultivosFinca.forEach(function (x, k) { if (igual(x, c)) idx = k; });
-        if (idx === -1) { form.cultivosFinca.push(c); asegurarSel(form); }
-        else { form.cultivosFinca.splice(idx, 1); delete form.sel[c]; delete form.visitado[c]; }
+    var resto = unicos(cultivos).filter(function (c) { return !form.cultivosFinca.some(function (x) { return igual(x, c); }); });
+    cont.innerHTML = '<label>Cultivos de la finca</label>' +
+      (elegidos ? '<div class="chips">' + elegidos + '</div>' : '') +
+      '<select id="vf-cultivo-add"><option value="">' + (form.cultivosFinca.length ? 'Añadir otro cultivo…' : 'Añadir cultivo…') + '</option>' +
+      resto.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') + '</select>';
+    var quitar = cont.querySelectorAll('[data-cf-quitar]');
+    for (var i = 0; i < quitar.length; i++) {
+      quitar[i].addEventListener('click', function (e) {
+        var c = e.currentTarget.getAttribute('data-cf-quitar');
+        form.cultivosFinca = form.cultivosFinca.filter(function (x) { return !igual(x, c); });
+        delete form.sel[c]; delete form.visitado[c];
         pintarCultivosFinca();
         pintarBloques();
         guardarBorrador();
       });
     }
+    $('vf-cultivo-add').addEventListener('change', function (e) {
+      var c = e.target.value;
+      if (!c) return;
+      if (!form.cultivosFinca.some(function (x) { return igual(x, c); })) form.cultivosFinca.push(c);
+      asegurarSel(form);
+      pintarCultivosFinca();
+      pintarBloques();
+      guardarBorrador();
+    });
   }
 
   function ordenPlagas(cultivo) {
@@ -610,7 +647,7 @@
     var cont = $('vf-bloques');
     if (!cont) return;
     if (!form.cultivosFinca.length) {
-      cont.innerHTML = '<p class="hint">Elige al menos un cultivo en "Cliente y cultivos de esta finca" para anotar plagas y estado fenológico.</p>';
+      cont.innerHTML = '<p class="hint">Elige la finca y sus cultivos para anotar plagas y estado fenológico.</p>';
       return;
     }
     cont.innerHTML = form.cultivosFinca.map(function (c) {
@@ -742,9 +779,14 @@
     var b = form;
     var msg = $('vf-msg');
     var nombre = (b.finca || '').trim();
-    if (!nombre) { msg.textContent = 'Escribe el nombre de la finca.'; return; }
+    if (!nombre) { msg.textContent = 'Elige la finca o escribe el nombre de la nueva.'; return; }
+    if (!b.fincaCargada && !(b.cliente || '').trim()) { msg.textContent = 'Indica el cliente de la finca nueva.'; return; }
     var cvis = b.cultivosFinca.filter(function (c) { return b.visitado[c] !== false; });
     if (!cvis.length) { msg.textContent = 'Elige al menos un cultivo visitado.'; return; }
+    if (/https?:\/\/|script\.google\.com/i.test(b.accion || '')) {
+      msg.textContent = 'En "Acción pendiente" hay un enlace. Escribe solo lo que quieres revisar (o déjalo vacío).';
+      return;
+    }
     var fecha = b.fecha || hoyTexto();
     var existente = buscarFinca(nombre);
     var nombreFinal = existente ? existente.nombre : nombre;
