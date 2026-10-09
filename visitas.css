@@ -78,3 +78,5 @@
   .v-card{padding:14px;}
   .tab-btn{padding:10px 12px;font-size:0.9rem;}
 }
+
+.secreto{-webkit-text-security:disc;text-security:disc;}

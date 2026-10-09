@@ -453,7 +453,7 @@
       '<div id="vf-cultivos-wrap"></div>' +
       '<div id="vf-bloques"></div>' +
       '<label style="margin-top:20px;">Observaciones generales</label><textarea id="vf-obs" placeholder="Lo que has visto en la finca">' + esc(b.observaciones) + '</textarea>' +
-      '<label>Acción pendiente</label><input type="text" id="vf-accion" autocomplete="off" placeholder="Ej. Volver a mirar el riego del sector 2" value="' + esc(b.accion) + '">' +
+      '<label>Acción pendiente</label><input type="text" id="vf-accion" name="nota-seguimiento" autocomplete="off" placeholder="Ej. Volver a mirar el riego del sector 2" value="' + esc(b.accion) + '">' +
       '<label>Fecha de seguimiento</label><input type="date" id="vf-seg" value="' + esc(b.seguimiento) + '">' +
       '<div class="seg-rapido"><button class="btn-mini" type="button" data-sumar="7">+7 días</button><button class="btn-mini" type="button" data-sumar="15">+15 días</button><button class="btn-mini" type="button" data-sumar="30">+30 días</button></div>' +
       '<label>Fotos</label><input type="file" id="vf-fotos" accept="image/*" multiple><div class="fotos" id="vf-fotos-prev"></div>' +
@@ -852,8 +852,8 @@
     var frec = frecuenciaActual();
     cont.innerHTML = '<div class="v-wrap">' +
       '<div class="v-card"><h2>Conexión con la hoja</h2>' +
-      '<label class="first">Dirección del script (termina en /exec)</label><input type="text" id="aj-url" autocomplete="off" value="' + esc(ajustes.url) + '">' +
-      '<label>Clave</label><input type="password" id="aj-clave" autocomplete="off" value="' + esc(ajustes.clave) + '">' +
+      '<label class="first">Dirección del script (termina en /exec)</label><input type="text" id="aj-url" name="direccion-script" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(ajustes.url) + '">' +
+      '<label>Clave</label><input type="text" id="aj-clave" class="secreto" name="clave-script" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(ajustes.clave) + '">' +
       '<button class="btn btn-primary" id="aj-probar" type="button">Guardar y probar la conexión</button><p class="hint" id="aj-msg"></p></div>' +
       '<div class="v-card"><h2>Datos de la hoja</h2><p class="hint" style="margin-top:0;">Descarga las fincas, las plagas, los estados fenológicos y los pendientes que ya hay en la hoja. Sirve para preparar un móvil nuevo.</p>' +
       '<button class="btn btn-outline" id="aj-cargar" type="button">Cargar datos de la hoja</button><p class="hint" id="aj-msg2"></p></div>' +
