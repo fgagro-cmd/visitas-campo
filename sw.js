@@ -1,5 +1,5 @@
 // Service worker: guarda los archivos de la app en el móvil para que funcione sin conexión.
-const CACHE = 'visitas-campo-v1';
+const CACHE = 'visitas-campo-v2';
 const ARCHIVOS = [
   './',
   'index.html',
@@ -40,23 +40,25 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(peticion.url);
   if (url.origin !== self.location.origin) return;
 
-  // Al abrir la app: primero intenta internet (así recibes las actualizaciones) y, si no hay conexión, usa la copia guardada.
-  if (peticion.mode === 'navigate') {
+  // Páginas y código: se abre al instante lo guardado y, en segundo plano, se descarga la versión nueva para la próxima vez.
+  const esPagina = peticion.mode === 'navigate';
+  const esCodigo = /\.(js|css|webmanifest)$/.test(url.pathname);
+  if (esPagina || esCodigo) {
+    const clave = esPagina ? 'index.html' : peticion;
     event.respondWith(
-      fetch(peticion)
-        .then((respuesta) => {
-          if (respuesta.ok) {
-            const copia = respuesta.clone();
-            caches.open(CACHE).then((cache) => cache.put('index.html', copia));
-          }
-          return respuesta;
+      caches.open(CACHE).then((cache) =>
+        cache.match(clave).then((guardado) => {
+          const red = fetch(peticion)
+            .then((r) => { if (r.ok) cache.put(clave, r.clone()); return r; })
+            .catch(() => guardado);
+          return guardado || red;
         })
-        .catch(() => caches.match('index.html'))
+      )
     );
     return;
   }
 
-  // El resto (letras, librerías, iconos): primero la copia guardada, que es instantánea.
+  // El resto (letras, iconos): primero la copia guardada, que es instantánea.
   event.respondWith(
     caches.match(peticion).then((guardado) => {
       if (guardado) return guardado;
