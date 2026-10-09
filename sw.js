@@ -1,5 +1,5 @@
 // Service worker: guarda los archivos de la app en el móvil para que funcione sin conexión.
-const CACHE = 'visitas-campo-v2';
+const CACHE = 'visitas-campo-v4';
 const ARCHIVOS = [
   './',
   'index.html',
