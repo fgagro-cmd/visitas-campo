@@ -1,0 +1,79 @@
+/* Pestañas Visitas y Ajustes (usa los colores y letras definidos en index.html) */
+[hidden]{display:none !important;}
+
+.tabs{display:flex;gap:4px;margin:0 0 20px;border-bottom:1px solid var(--clr-line);overflow-x:auto;}
+.tab-btn{
+  background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-1px;
+  font-family:var(--font-body);font-weight:600;font-size:0.95rem;
+  padding:11px 16px;color:var(--clr-ink-soft);cursor:pointer;white-space:nowrap;
+}
+.tab-btn.active{color:var(--clr-primary);border-bottom-color:var(--clr-accent);}
+.badge{
+  display:inline-block;min-width:18px;padding:1px 6px;margin-left:6px;border-radius:10px;
+  background:var(--clr-warn);color:#fff;font-size:0.7rem;font-weight:600;text-align:center;
+}
+
+.v-wrap{max-width:640px;margin:0 auto;}
+.v-card{background:#fff;border:1px solid var(--clr-line);border-radius:12px;padding:18px;margin-bottom:16px;}
+.v-card > h2, .v-card > summary{
+  font-family:var(--font-body);font-size:0.85rem;font-weight:600;color:var(--clr-primary);
+  margin:0 0 12px;padding:0;border:none;cursor:default;
+}
+.v-card > summary{cursor:pointer;margin:0;}
+.v-card[open] > summary{margin-bottom:12px;}
+.v-card input[type=text], .v-card input[type=password], .v-card input[type=date],
+.v-card select, .v-card textarea{font-size:1rem;}
+
+.v-estado{font-size:0.88rem;margin-bottom:4px;color:var(--clr-ink-soft);}
+.v-estado.ok{color:#3E6B2E;}
+.v-estado.aviso{color:var(--clr-warn);}
+.v-estado.error{color:var(--clr-warn);font-weight:600;}
+.v-flash{font-size:0.88rem;color:#3E6B2E;font-weight:600;margin-bottom:8px;}
+
+.v-row{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--clr-line);
+}
+.v-row:last-child{border-bottom:none;}
+.v-row.click{cursor:pointer;}
+.v-row .v-main{min-width:0;}
+.v-row .v-titulo{font-weight:600;font-size:0.92rem;}
+.v-row .v-sub{color:var(--clr-ink-soft);font-size:0.8rem;margin-top:2px;}
+.v-row .v-aparte{font-size:0.8rem;text-align:right;white-space:nowrap;color:var(--clr-ink-soft);}
+.v-row .v-aparte.alerta{color:var(--clr-warn);font-weight:600;}
+.v-vacio{color:var(--clr-ink-soft);font-size:0.85rem;padding:6px 0;}
+
+/* Formulario de visita */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.chip{
+  border:1px solid var(--clr-line);background:#FBFAF5;border-radius:20px;
+  padding:9px 14px;font-size:0.88rem;font-family:var(--font-body);color:var(--clr-ink);cursor:pointer;
+}
+.chip.on{background:var(--clr-primary);border-color:var(--clr-primary);color:#fff;}
+.chip.nivel-leve{background:#FBEFC8;border-color:#E3C766;}
+.chip.nivel-media{background:#F6D9B4;border-color:#D9A15A;}
+.chip.nivel-alta{background:#F1C2B3;border-color:#C9694B;font-weight:600;}
+
+.cultivo-bloque{border:1px solid var(--clr-line);border-radius:10px;padding:12px 14px;margin-top:14px;background:#FFFEFA;}
+.cultivo-bloque.off{opacity:0.55;}
+.cultivo-bloque .chk{display:flex;align-items:center;gap:10px;font-size:1rem;color:var(--clr-ink);margin:0;}
+.cultivo-bloque .chk input{width:20px;height:20px;}
+.nueva-fila{display:flex;gap:8px;margin-top:10px;}
+.nueva-fila input{flex:1;min-width:0;}
+.nueva-fila .btn-mini{padding:8px 12px;font-size:0.8rem;}
+
+.seg-rapido{display:flex;gap:8px;margin-top:8px;}
+.seg-rapido .btn-mini{padding:8px 12px;font-size:0.8rem;}
+.fotos{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
+.foto{position:relative;width:88px;height:88px;border-radius:8px;overflow:hidden;border:1px solid var(--clr-line);}
+.foto img{width:100%;height:100%;object-fit:cover;display:block;}
+.foto button{
+  position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;border:none;
+  background:rgba(0,0,0,0.6);color:#fff;font-size:0.9rem;line-height:1;cursor:pointer;
+}
+.v-banner{background:#FBEFC8;border-radius:8px;padding:10px 12px;font-size:0.85rem;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+
+@media (max-width:520px){
+  .v-card{padding:14px;}
+  .tab-btn{padding:10px 12px;font-size:0.9rem;}
+}

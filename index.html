@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visitas FG Agro</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#34412A">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Visitas">
+<link rel="stylesheet" href="visitas.css">
+<style>
+  @font-face{font-family:'Fraunces';font-weight:600;font-style:normal;src:url('vendor/fonts/fraunces-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Fraunces';font-weight:700;font-style:normal;src:url('vendor/fonts/fraunces-latin-700-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:400;font-style:normal;src:url('vendor/fonts/inter-latin-400-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:500;font-style:normal;src:url('vendor/fonts/inter-latin-500-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:600;font-style:normal;src:url('vendor/fonts/inter-latin-600-normal.woff2') format('woff2');}
+  @font-face{font-family:'Inter';font-weight:700;font-style:normal;src:url('vendor/fonts/inter-latin-700-normal.woff2') format('woff2');}
+
+  :root{
+    --clr-bg:#F5F1E6;
+    --clr-ink:#232B1D;
+    --clr-ink-soft:#5B6350;
+    --clr-primary:#34412A;
+    --clr-primary-light:#4C5D3D;
+    --clr-accent:#C08A3E;
+    --clr-warn:#AC4E2C;
+    --clr-line:#DCD5C2;
+    --clr-card-bg:#FFFDF7;
+    --font-head:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--clr-bg);color:var(--clr-ink);font-family:var(--font-body);padding:24px 14px 60px;}
+  .app{max-width:680px;margin:0 auto;}
+  .app-header{margin-bottom:18px;}
+  .app-header h1{font-family:var(--font-head);font-weight:600;font-size:1.7rem;margin:0 0 4px;color:var(--clr-primary);}
+  .app-header p{margin:0;color:var(--clr-ink-soft);font-size:0.92rem;}
+
+  label{display:block;font-size:0.8rem;color:var(--clr-ink-soft);margin:14px 0 5px;}
+  label.first{margin-top:0;}
+  input[type=text], input[type=password], input[type=date], textarea, select{
+    width:100%;font-family:var(--font-body);font-size:0.92rem;padding:9px 10px;
+    border:1px solid var(--clr-line);border-radius:7px;background:#FBFAF5;color:var(--clr-ink);
+  }
+  textarea{resize:vertical;min-height:56px;}
+
+  .btn{font-family:var(--font-body);font-weight:600;font-size:0.85rem;border:none;border-radius:8px;padding:10px 16px;cursor:pointer;}
+  .btn-secondary{background:#EFEADB;color:var(--clr-primary);margin-top:14px;}
+  .btn-primary{background:var(--clr-primary);color:#fff;width:100%;margin-top:20px;}
+  .btn-primary:hover{background:var(--clr-primary-light);}
+  .btn-outline{background:#fff;border:1px solid var(--clr-primary);color:var(--clr-primary);margin-top:12px;width:100%;}
+  .btn-row{display:flex;gap:10px;}
+  .btn-row .btn{flex:1;margin-top:12px;}
+  .btn-mini{font-size:0.72rem;padding:5px 9px;border-radius:6px;border:1px solid var(--clr-line);background:#fff;color:var(--clr-primary);cursor:pointer;white-space:nowrap;}
+  .hint{font-size:0.76rem;color:var(--clr-ink-soft);margin-top:6px;}
+  details > summary{list-style:none;}
+  details > summary::-webkit-details-marker{display:none;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="app-header">
+    <h1>Visitas</h1>
+    <p>Registro de visitas a fincas.</p>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab-btn" data-tab="visitas" type="button">Visitas<span class="badge" id="badge-visitas" hidden></span></button>
+    <button class="tab-btn" data-tab="ajustes" type="button">Ajustes</button>
+  </div>
+
+  <div id="tab-visitas"></div>
+  <div id="tab-ajustes" hidden></div>
+</div>
+
+<script src="visitas.js"></script>
+<script>
+// Registra el service worker (solo funciona cuando la app está en una dirección https)
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(e => console.error('No se pudo registrar el service worker', e));
+  });
+}
+</script>
+</body>
+</html>
