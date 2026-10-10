@@ -219,13 +219,34 @@
     });
   }
 
-  function fusionar(d) {
+  function fusionar(d, silencioso) {
     var nuevas = 0;
+    var modoHoja = Array.isArray(d.ultimas);
+    var sinEnviar = visitas.filter(function (v) { return !v.enviada; });
+    var nombresSinEnviar = {};
+    sinEnviar.forEach(function (v) { nombresSinEnviar[String(v.finca).toLowerCase()] = true; });
+    if (modoHoja) {
+      // Con el script nuevo la hoja es la fuente de verdad: lo que borres allí desaparece también aquí.
+      var idsLocales = {};
+      sinEnviar.forEach(function (v) { idsLocales[v.id] = true; });
+      var deHoja = d.ultimas.filter(function (u) { return !idsLocales[u.id]; }).map(function (u) {
+        return { id: u.id, fecha: u.fecha, finca: u.finca, cliente: u.cliente || '', cultivo: u.cultivo || '', fenologia: u.fenologia || '',
+          plagas: u.plagas || '', observaciones: '', accion: u.accion || '', seguimiento: u.seguimiento || '', hecho: !!u.hecho, nFotos: 0, enviada: true };
+      });
+      visitas = sinEnviar.concat(deHoja);
+      var enHoja = {};
+      (d.fincas || []).forEach(function (f) { enHoja[String(f.nombre).toLowerCase()] = true; });
+      fincas = fincas.filter(function (f) { var k = String(f.nombre).toLowerCase(); return enHoja[k] || nombresSinEnviar[k]; });
+    }
     (d.fincas || []).forEach(function (f) {
       var loc = buscarFinca(f.nombre);
       if (!loc) {
         fincas.push({ nombre: f.nombre, cliente: f.cliente || '', cultivos: f.cultivos || [], ultimaVisita: f.ultimaVisita || null });
         nuevas++;
+      } else if (modoHoja && !nombresSinEnviar[String(loc.nombre).toLowerCase()]) {
+        loc.ultimaVisita = f.ultimaVisita || null;
+        loc.cliente = f.cliente || loc.cliente || '';
+        if (f.cultivos && f.cultivos.length) loc.cultivos = f.cultivos;
       } else {
         if (f.ultimaVisita && (!loc.ultimaVisita || f.ultimaVisita > loc.ultimaVisita)) loc.ultimaVisita = f.ultimaVisita;
         if (!loc.cliente && f.cliente) loc.cliente = f.cliente;
@@ -259,8 +280,17 @@
     });
     visitas.forEach(function (v) { if (v.enviada && v.accion && !v.hecho && !idsPend[v.id]) v.hecho = true; });
     salvar();
-    pintarTodo();
+    if (silencioso) { if (!form) pintarVisitas(); } else pintarTodo();
     return nuevas;
+  }
+
+  // Al abrir la app (y al volver a ella) se pone al día con la hoja, sin molestar si estás rellenando una visita.
+  var ultimaActualizacion = 0;
+  function actualizarDeHoja() {
+    if (!configurado() || navigator.onLine === false || form) return Promise.resolve();
+    if (Date.now() - ultimaActualizacion < 60000) return Promise.resolve();
+    ultimaActualizacion = Date.now();
+    return pedirDatos().then(function (d) { if (!form) fusionar(d, true); }).catch(function () { /* sin cobertura: se queda lo que hay */ });
   }
 
   // ------------------------------------------------------------ pestañas
@@ -348,19 +378,21 @@
           '</div></div><button class="btn-mini" type="button" data-hecho="' + esc(v.id) + '">Hecho</button></div>';
       }).join('') : '<div class="v-vacio">No hay seguimientos pendientes.</div>') + '</div>' +
 
-      '<div class="v-card"><h2>Últimas visitas</h2>' +
+      '<details class="v-card"><summary>Últimas visitas (' + ultimas.length + ')</summary>' +
       (ultimas.length ? ultimas.map(function (x) {
         var v = x.v;
         var sub = [v.cultivo, v.plagas].filter(Boolean).join(' · ');
         return '<div class="v-row"><div class="v-main"><div class="v-titulo">' + esc(v.finca) + '</div><div class="v-sub">' + esc(sub || 'Sin plagas anotadas') +
           '</div></div><div class="v-aparte">' + formatoFecha(v.fecha) + '<br>' + (v.enviada ? 'enviada' : 'pendiente') + '</div></div>';
-      }).join('') : '<div class="v-vacio">Todavía no hay visitas registradas.</div>') + '</div>' +
+      }).join('') : '<div class="v-vacio">Todavía no hay visitas registradas.</div>') + '</details>' +
 
       '<details class="v-card"><summary>Todas las fincas (' + lista.length + ')</summary>' +
       (lista.length ? lista.map(filaFinca).join('') : '<div class="v-vacio">Sin fincas todavía.</div>') + '</details>' +
       '</div>';
 
+    var abiertos = [].map.call(cont.querySelectorAll('details.v-card'), function (d) { return d.open; });
     cont.innerHTML = html;
+    [].forEach.call(cont.querySelectorAll('details.v-card'), function (d, i) { if (abiertos[i]) d.open = true; });
     $('v-nueva').addEventListener('click', function () { abrirForm(null); });
     $('v-sync').addEventListener('click', function () { sincronizar(); });
     var filas = cont.querySelectorAll('.v-row.click');
@@ -856,7 +888,8 @@
       '<label>Clave</label><input type="text" id="aj-clave" class="secreto" name="clave-script" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(ajustes.clave) + '">' +
       '<button class="btn btn-primary" id="aj-probar" type="button">Guardar y probar la conexión</button><p class="hint" id="aj-msg"></p></div>' +
       '<div class="v-card"><h2>Datos de la hoja</h2><p class="hint" style="margin-top:0;">Descarga las fincas, las plagas, los estados fenológicos y los pendientes que ya hay en la hoja. Sirve para preparar un móvil nuevo.</p>' +
-      '<button class="btn btn-outline" id="aj-cargar" type="button">Cargar datos de la hoja</button><p class="hint" id="aj-msg2"></p></div>' +
+      '<button class="btn btn-outline" id="aj-cargar" type="button">Cargar datos de la hoja</button>' +
+      '<button class="btn btn-outline" id="aj-vaciar" type="button" style="margin-top:8px;">Vaciar el historial de este móvil</button><p class="hint" id="aj-msg2"></p></div>' +
       '<div class="v-card"><h2>Listas</h2>' +
       '<label class="first">Cultivos (uno por línea)</label><textarea id="aj-cultivos" rows="6">' + esc(cultivos.join('\n')) + '</textarea>' +
       '<label>Estados fenológicos (uno por línea, en el orden que quieras verlos)</label><textarea id="aj-fen" rows="6">' + esc(fenologias.map(function (f) { return f.nombre; }).join('\n')) + '</textarea>' +
@@ -869,6 +902,7 @@
       '</div>';
     $('aj-probar').addEventListener('click', probarConexion);
     $('aj-cargar').addEventListener('click', cargarDeHoja);
+    $('aj-vaciar').addEventListener('click', vaciarHistorialLocal);
     $('aj-listas').addEventListener('click', guardarListas);
     $('aj-copia').addEventListener('click', descargarCopia);
     $('aj-restaurar').addEventListener('change', restaurarCopia);
@@ -939,6 +973,18 @@
       fijarMsg('aj-msg', 'Conexión correcta. Fincas nuevas cargadas: ' + n + '.');
       return sincronizar();
     }).catch(function (e) { fijarMsg('aj-msg', textoErrorConexion(e)); });
+  }
+
+  function vaciarHistorialLocal() {
+    if (!window.confirm('Se borra la lista de visitas de este móvil (no toca la hoja). Las visitas aún sin enviar se conservan. ¿Seguir?')) return;
+    var antes = visitas.length;
+    visitas = visitas.filter(function (v) { return !v.enviada; });
+    var conVisita = {};
+    visitas.forEach(function (v) { conVisita[String(v.finca).toLowerCase()] = true; });
+    fincas.forEach(function (f) { if (!conVisita[String(f.nombre).toLowerCase()]) f.ultimaVisita = null; });
+    salvar();
+    pintarVisitas();
+    fijarMsg('aj-msg2', 'Listo: ' + (antes - visitas.length) + ' visitas quitadas de este móvil.');
   }
 
   function cargarDeHoja() {
@@ -1019,12 +1065,9 @@
     iniciarTabs();
     pintarTodo();
     refrescarEstado();
-    window.addEventListener('online', function () { sincronizar(); });
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) sincronizar(); });
-    if (configurado()) {
-      sincronizar();
-      if (!fincas.length) pedirDatos().then(fusionar).catch(function () { /* se podrá cargar luego desde Ajustes */ });
-    }
+    window.addEventListener('online', function () { sincronizar().then(actualizarDeHoja); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) sincronizar().then(actualizarDeHoja); });
+    if (configurado()) sincronizar().then(actualizarDeHoja);
   }
 
   window.VisitasApp = {
